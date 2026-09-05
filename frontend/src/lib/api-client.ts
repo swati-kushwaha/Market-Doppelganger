@@ -86,3 +86,39 @@ export type RelationshipGraphResponse = {
 };
 
 export const getRelationships = (symbol: string) => apiRequest<RelationshipGraphResponse>(`/api/relationships/${encodeURIComponent(symbol)}`);
+
+export type MeaningfulChange = {
+  symbol: string;
+  change_type: string;
+  score: number;
+  confidence: number;
+  explanation: string;
+  signals: Record<string, unknown>;
+  detected_at: string;
+};
+
+export type VisitStatusResponse = {
+  watchlist_id: string;
+  has_baseline: boolean;
+  last_checked_at: string | null;
+  meaningful_changes: MeaningfulChange[];
+};
+
+export type CheckInResponse = VisitStatusResponse & {
+  visit_id: string;
+  first_visit: boolean;
+  baseline_set: boolean;
+  previous_checked_at: string | null;
+  current_checked_at: string;
+  unchanged_symbols: string[];
+};
+
+export function authenticatedApiRequest<T>(path: string, accessToken: string, init?: RequestInit) {
+  return apiRequest<T>(path, {
+    ...init,
+    headers: { Authorization: `Bearer ${accessToken}`, ...init?.headers },
+  });
+}
+
+export const getLatestVisit = (watchlistId: string, accessToken: string) => authenticatedApiRequest<VisitStatusResponse>(`/api/visits/latest/${encodeURIComponent(watchlistId)}`, accessToken);
+export const checkInWatchlist = (watchlistId: string, accessToken: string) => authenticatedApiRequest<CheckInResponse>("/api/visits/check-in", accessToken, { method: "POST", body: JSON.stringify({ watchlist_id: watchlistId }) });
